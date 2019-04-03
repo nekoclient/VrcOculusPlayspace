@@ -9,7 +9,7 @@ basically, hold A to go up, hold X to go down.
 doesn't require any game files to be modified.
 (it uses my [UnityAssemblyInjector](https://github.com/avail/UnityAssemblyInjector) to load the code in)
 
-will be broken when the game updates, unless 
-someone feels like doing reflection for the needed functions (OVRInput class)
+~~will be broken when the game updates, unless
+someone feels like doing reflection for the needed functions (OVRInput class)~~ VRChat updated, it is now in a separated (unobfuscated) dll, so it will function when the game updates, unless they decide to obfuscate it again
 
 downloads in releases tab, drag and drop to vrchat's folder in `Oculus\Software\Software\vrchat-vrchat`.
