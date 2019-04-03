@@ -25,10 +25,58 @@ namespace VrcPlayspaceMover
             }).Start();
         }
 
+        private static Dictionary<OVRInput.Button, bool> ms_wasPressed = new Dictionary<OVRInput.Button, bool>()
+        {
+            { OVRInput.Button.Three, false },
+            { OVRInput.Button.One, false }
+        };
+
+        private static bool IsKeyJustPressed(OVRInput.Button key)
+        {
+            if (!ms_wasPressed.ContainsKey(key))
+            {
+                ms_wasPressed.Add(key, false);
+            }
+
+            if (OVRInput.Get(key))
+            {
+                if (!ms_wasPressed[key])
+                {
+                    ms_wasPressed[key] = true;
+
+                    return true;
+                }
+            }
+            else
+            {
+                if (ms_wasPressed[key])
+                {
+                    ms_wasPressed[key] = false;
+                }
+            }
+
+            return false;
+        }
+
         internal class Behaviour : MonoBehaviour
         {
+            private Vector3 m_startingOffset = new Vector3();
+
             private void Update()
             {
+                bool leftJustPressed = IsKeyJustPressed(OVRInput.Button.Three);
+                bool rightJustPressed = IsKeyJustPressed(OVRInput.Button.One);
+
+                if (leftJustPressed)
+                {
+                    m_startingOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+                }
+
+                if (rightJustPressed)
+                {
+                    m_startingOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+                }
+
                 bool leftTrigger = OVRInput.Get(OVRInput.Button.Three);
                 bool rightTrigger = OVRInput.Get(OVRInput.Button.One);
 
@@ -38,12 +86,20 @@ namespace VrcPlayspaceMover
 
                     if (leftTrigger)
                     {
-                        ctrl.cameraLiftTransform.localPosition -= new Vector3(0, Time.deltaTime * 0.2f, 0);
+                        Vector3 currentOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+                        Vector3 calculatedOffset = (currentOffset - m_startingOffset) * -1.0f;
+                        m_startingOffset = currentOffset;
+
+                        ctrl.cameraLiftTransform.localPosition += calculatedOffset;
                     }
 
                     if (rightTrigger)
                     {
-                        ctrl.cameraLiftTransform.localPosition += new Vector3(0, Time.deltaTime * 0.2f, 0);
+                        Vector3 currentOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+                        Vector3 calculatedOffset = (currentOffset - m_startingOffset) * -1.0f;
+                        m_startingOffset = currentOffset;
+
+                        ctrl.cameraLiftTransform.localPosition += calculatedOffset;
                     }
                 }
             }
