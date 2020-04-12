@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using UnityEngine;
-
+using System.Diagnostics;
 
 namespace VrcPlayspaceMover
 {
@@ -92,7 +92,7 @@ namespace VrcPlayspaceMover
                     }
                     else
                     {
-                        Log.Debug("camera not found?");
+                        Trace.WriteLine("camera not found?");
                         return;
                     }
 
