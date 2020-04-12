@@ -38,7 +38,7 @@ namespace VrcPlayspaceMover
                 ms_wasPressed.Add(key, false);
             }
 
-            if (OVRInput.Get(key))
+            if (OVRInput.Get(key, OVRInput.Controller.Touch))
             {
                 if (!ms_wasPressed[key])
                 {
@@ -77,12 +77,24 @@ namespace VrcPlayspaceMover
                     m_startingOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
                 }
 
-                bool leftTrigger = OVRInput.Get(OVRInput.Button.Three);
-                bool rightTrigger = OVRInput.Get(OVRInput.Button.One);
+                bool leftTrigger = OVRInput.Get(OVRInput.Button.Three, OVRInput.Controller.Touch);
+                bool rightTrigger = OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.Touch);
 
                 if (leftTrigger || rightTrigger)
                 {
-                    VRCVrCameraOculus ctrl = ((VRCVrCameraOculus[])UnityEngine.Object.FindObjectsOfType(typeof(VRCVrCameraOculus)))[0];
+                    Object[] ctrls = Object.FindObjectsOfType(VRCVrCameraOculus.Il2CppType);
+
+                    VRCVrCameraOculus ctrl;
+
+                    if (ctrls.Length > 0)
+                    {
+                        ctrl = ctrls[0].TryCast<VRCVrCameraOculus>();
+                    }
+                    else
+                    {
+                        Log.Debug("camera not found?");
+                        return;
+                    }
 
                     if (leftTrigger)
                     {
