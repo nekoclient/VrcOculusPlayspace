@@ -5,26 +5,21 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using System.Diagnostics;
+using MelonLoader;
+using Object = UnityEngine.Object;
+using UnhollowerRuntimeLib;
+
+[assembly: MelonInfo(typeof(VrcPlayspaceMover.VrcPlayspaceMover),
+        "VrcPlayspaceMover",
+        "1.0.0",
+        "avail",
+        "https://github.com/nekoclient/VrcOculusPlayspace/releases")]
+[assembly: MelonGame("VRChat", "VRChat")]
 
 namespace VrcPlayspaceMover
 {
-    public class VrcPlayspaceMover
+    public class VrcPlayspaceMover : MelonMod
     {
-        private static GameObject m_mainObject;
-
-        public static void Initialize()
-        {
-            new Thread(() =>
-            {
-                Thread.Sleep(7000);
-
-                m_mainObject = new GameObject("VrcPlayspaceMover");
-                m_mainObject.AddComponent<Behaviour>();
-
-                UnityEngine.Object.DontDestroyOnLoad(m_mainObject);
-            }).Start();
-        }
-
         private static Dictionary<OVRInput.Button, bool> ms_wasPressed = new Dictionary<OVRInput.Button, bool>()
         {
             { OVRInput.Button.Three, false },
@@ -58,61 +53,58 @@ namespace VrcPlayspaceMover
             return false;
         }
 
-        internal class Behaviour : MonoBehaviour
+        private Vector3 m_startingOffset = new Vector3();
+
+        public override void OnUpdate()
         {
-            private Vector3 m_startingOffset = new Vector3();
+            bool leftJustPressed = IsKeyJustPressed(OVRInput.Button.Three);
+            bool rightJustPressed = IsKeyJustPressed(OVRInput.Button.One);
 
-            private void Update()
+            if (leftJustPressed)
             {
-                bool leftJustPressed = IsKeyJustPressed(OVRInput.Button.Three);
-                bool rightJustPressed = IsKeyJustPressed(OVRInput.Button.One);
+                m_startingOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+            }
 
-                if (leftJustPressed)
+            if (rightJustPressed)
+            {
+                m_startingOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+            }
+
+            bool leftTrigger = OVRInput.Get(OVRInput.Button.Three, OVRInput.Controller.Touch);
+            bool rightTrigger = OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.Touch);
+
+            if (leftTrigger || rightTrigger)
+            {
+                Object[] ctrls = Object.FindObjectsOfType(Il2CppType.Of<VRCVrCameraOculus>());
+
+                VRCVrCameraOculus ctrl;
+
+                if (ctrls.Length > 0)
                 {
-                    m_startingOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+                    ctrl = ctrls[0].TryCast<VRCVrCameraOculus>();
+                }
+                else
+                {
+                    Trace.WriteLine("camera not found?");
+                    return;
                 }
 
-                if (rightJustPressed)
+                if (leftTrigger)
                 {
-                    m_startingOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+                    Vector3 currentOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+                    Vector3 calculatedOffset = (currentOffset - m_startingOffset) * -1.0f;
+                    m_startingOffset = currentOffset;
+
+                    ctrl.cameraLiftTransform.localPosition += calculatedOffset;
                 }
 
-                bool leftTrigger = OVRInput.Get(OVRInput.Button.Three, OVRInput.Controller.Touch);
-                bool rightTrigger = OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.Touch);
-
-                if (leftTrigger || rightTrigger)
+                if (rightTrigger)
                 {
-                    Object[] ctrls = Object.FindObjectsOfType(VRCVrCameraOculus.Il2CppType);
+                    Vector3 currentOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+                    Vector3 calculatedOffset = (currentOffset - m_startingOffset) * -1.0f;
+                    m_startingOffset = currentOffset;
 
-                    VRCVrCameraOculus ctrl;
-
-                    if (ctrls.Length > 0)
-                    {
-                        ctrl = ctrls[0].TryCast<VRCVrCameraOculus>();
-                    }
-                    else
-                    {
-                        Trace.WriteLine("camera not found?");
-                        return;
-                    }
-
-                    if (leftTrigger)
-                    {
-                        Vector3 currentOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
-                        Vector3 calculatedOffset = (currentOffset - m_startingOffset) * -1.0f;
-                        m_startingOffset = currentOffset;
-
-                        ctrl.cameraLiftTransform.localPosition += calculatedOffset;
-                    }
-
-                    if (rightTrigger)
-                    {
-                        Vector3 currentOffset = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
-                        Vector3 calculatedOffset = (currentOffset - m_startingOffset) * -1.0f;
-                        m_startingOffset = currentOffset;
-
-                        ctrl.cameraLiftTransform.localPosition += calculatedOffset;
-                    }
+                    ctrl.cameraLiftTransform.localPosition += calculatedOffset;
                 }
             }
         }
